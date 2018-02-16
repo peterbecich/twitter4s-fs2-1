@@ -1,33 +1,39 @@
 package com.danielasfregola.twitter4s.fs2
 package http.clients.streaming.statuses
 
-import com.danielasfregola.twitter4s.entities.streaming.StreamingMessage
+import cats.effect.IO
 import com.danielasfregola.twitter4s.entities.enums.FilterLevel
 import com.danielasfregola.twitter4s.entities.enums.FilterLevel.FilterLevel
 import com.danielasfregola.twitter4s.entities.enums.Language.Language
 import com.danielasfregola.twitter4s.entities.streaming.CommonStreamingMessage
-import com.danielasfregola.twitter4s.http.clients.streaming.statuses.parameters._
-import com.danielasfregola.twitter4s.http.clients.streaming.{StreamingClient, TwitterStream}
-import com.danielasfregola.twitter4s.fs2.http.clients.streaming.FS2._
-import com.danielasfregola.twitter4s.util.Configurations._
+import com.danielasfregola.twitter4s.entities.streaming.StreamingMessage
+import com.danielasfregola.twitter4s.fs2.http.clients.streaming.FS2.StreamingClientFS2
 import com.danielasfregola.twitter4s.http.clients.streaming.StreamingClient
 import com.danielasfregola.twitter4s.http.clients.streaming.statuses.TwitterStatusClient
-
-
-import cats.effect.IO
+import com.danielasfregola.twitter4s.http.clients.streaming.statuses.parameters._
+import com.danielasfregola.twitter4s.http.clients.streaming.{StreamingClient, TwitterStream}
+import com.danielasfregola.twitter4s.util.Configurations._
 import scala.concurrent.Future
 
 object FS2 {
-  implicit class TwitterStatusClientFS2(twitterStatusClient: TwitterStatusClient)
+  class TwitterStatusClientFS2(twitterStatusClient: TwitterStatusClient)
       extends TwitterStatusClient {
 
-    val streamingClient = StreamingClientFS2(twitterStatusClient.streamingClient)
+    val streamingClient: StreamingClientFS2 = new StreamingClientFS2(twitterStatusClient.streamingClient)
+     // val streamingClient: StreamingClientFS2 = twitterStatusClient.streamingClient
 
-    def sampleStatusesFS2: Unit = println("sample statuses fs2")
+    // value streamingClient in trait TwitterStatusClient cannot be accessed in
+    // com.danielasfregola.twitter4s.http.clients.streaming.statuses.TwitterStatusClient
+    //   [error]  Access to protected value streamingClient not permitted because
+    //   [error]  prefix type com.danielasfregola.twitter4s.http.clients.streaming.statuses.TwitterStatusClient
+    //            does not conform to
+    //   [error]  class TwitterStatusClientFS2 in object FS2 where the access takes place
+    //   [error]     val streamingClient: StreamingClientFS2 = twitterStatusClient.streamingClient
+    //   [error]                                                                   ^
+    
 
     // TODO give TwitterStatusClient.statusUrl more flexible access in twitter4s
     private val statusUrl = s"$statusStreamingTwitterUrl/$twitterVersion/statuses"
-
 
     /** Feeds `StreamingMessage`s into a Functional Streams for Scala (FS2) `Sink`.
       * @param languages : Empty by default. List of 'BCP 47' language identifiers.
@@ -48,25 +54,11 @@ object FS2 {
       tracks: Seq[String] = Seq.empty,
       filter_level: FilterLevel = FilterLevel.None)
       (sink: fs2.Sink[IO, StreamingMessage]): Future[TwitterStream] = {
-      // import twitterStatusClient.streamingClient._
-      import streamingClient._
       val parameters = StatusSampleParameters(languages, stall_warnings, tracks, filter_level)
-      preProcessing()
-      // see StreamingClient
-      streamingClient.RichStreamingHttpRequestFS2(Get(s"${statusUrl}/sample.json", parameters)).processStreamFS2(sink)
-      // Get(s"${statusUrl}/sample.json", parameters).processStreamFS2(sink)
-
-      // def printTweetText: PartialFunction[StreamingMessage, Unit] = {
-      //   case tweet: com.danielasfregola.twitter4s.entities.Tweet => println(tweet.text)
-      // }
-      // Get(s"${statusUrl}/sample.json", parameters).processStream(printTweetText)
-
+      // streamingClient.preProcessing()
+      streamingClient.RichStreamingHttpRequestFS2(
+        streamingClient.Get(s"${statusUrl}/sample.json", parameters)
+      ).processStreamFS2(sink)
     }
-    
-
-
   }
-
-
-
 }

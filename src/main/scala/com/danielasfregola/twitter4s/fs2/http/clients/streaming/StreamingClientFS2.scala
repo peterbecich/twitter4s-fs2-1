@@ -1,37 +1,26 @@
 package com.danielasfregola.twitter4s.fs2.http.clients.streaming
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream._
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
+import cats.effect._
 import com.danielasfregola.twitter4s.entities.streaming.StreamingMessage
 import com.danielasfregola.twitter4s.entities.{AccessToken, ConsumerToken}
 import com.danielasfregola.twitter4s.exceptions.TwitterException
 import com.danielasfregola.twitter4s.http.clients.OAuthClient
-import com.danielasfregola.twitter4s.http.oauth.OAuth2Provider
-import com.danielasfregola.twitter4s.http.clients.streaming.TwitterStream
 import com.danielasfregola.twitter4s.http.clients.streaming.StreamingClient
-
-
+import com.danielasfregola.twitter4s.http.clients.streaming.TwitterStream
+import com.danielasfregola.twitter4s.http.oauth.OAuth2Provider
+import java.util.UUID
 import org.json4s.native.Serialization
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
-import cats.effect._
-
 
 object FS2 {
   implicit class StreamingClientFS2(streamingClient: StreamingClient)
       extends StreamingClient(streamingClient.consumerToken, streamingClient.accessToken) {
-
-    // val withLogRequest = streamingClient.withLogRequest
-    // val withLogRequestResponse = streamingClient.withLogRequestResponse
-
-    // lazy val oauthProvider = streamingClient.oauthProvider
 
     private val maxConnectionTimeMillis = 1000
 
